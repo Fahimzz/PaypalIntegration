@@ -22,32 +22,7 @@ namespace Paypal.Controllers
 
         public async Task<PayPalResBBody> Create(string value)
         {
-            //using (var httpClient = new HttpClient())
-            //{
-            //    using (var request = new HttpRequestMessage(new HttpMethod("POST"), "https://api-m.sandbox.paypal.com/v1/oauth2/token"))
-            //    {
-            //        PayPalSettings payPalSettings = new PayPalSettings();
-            //        payPalSettings.client_id = "AfRsYpE7GqYdI1tPsVlsxxZgqYQ1IjsbtUMqVXW04zVtvEoi3TRNPoQSYhxrfk7i5_xWu-mCqzB7TEKO";
-            //        payPalSettings.client_secret = "EJkEf071qRvJbLOah1-I2DycaVgREgPiB1t73PKpYp_poL4KTI2pLEVVJGo0yA1TuEC_tUxMf1ZbTFsw";
-            //        var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(payPalSettings.client_id+":"+payPalSettings.client_secret);
-            //        string val = System.Convert.ToBase64String(plainTextBytes);
-            //        request.Headers.TryAddWithoutValidation("Authorization", "Basic "+val);
-
-
-            //        var contentList = new List<string>();
-            //        contentList.Add($"grant_type={Uri.EscapeDataString("client_credentials")}");
-            //        contentList.Add($"ignoreCache={Uri.EscapeDataString("true")}");
-            //        contentList.Add($"return_authn_schemes={Uri.EscapeDataString("true")}");
-            //        contentList.Add($"return_client_metadata={Uri.EscapeDataString("true")}");
-            //        contentList.Add($"return_unconsented_scopes={Uri.EscapeDataString("true")}");
-            //        request.Content = new StringContent(string.Join("&", contentList));
-            //        request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded");
-
-            //        var response = httpClient.SendAsync(request);
-            //        string responseStream = await response.Content.ReadAsStringAsync();
-
-            //    }
-            //}
+           
             HttpClient client = new HttpClient();
             Uri baseUri = new Uri("https://api-m.sandbox.paypal.com/v1/oauth2/token");
             client.BaseAddress = baseUri;
@@ -74,8 +49,23 @@ namespace Paypal.Controllers
             var response = task.Result;
             //response.EnsureSuccessStatusCode();
             string responseBody = response.Content.ReadAsStringAsync().Result;
-            Root deptObj = JsonSerializer.Deserialize<Root>(responseBody);
-            Console.WriteLine(responseBody);
+            Root authorization = JsonSerializer.Deserialize<Root>(responseBody);
+            //create order
+            using (var httpClient = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(new HttpMethod("POST"), "https://api-m.sandbox.paypal.com/v2/checkout/orders"))
+                {
+                    request.Headers.TryAddWithoutValidation("Prefer", "return=representation");
+                    request.Headers.TryAddWithoutValidation("PayPal-Request-Id", "1518cce6-09dc-44b2-b5cf-9ae1ca5f0e4e");
+                    request.Headers.TryAddWithoutValidation("Authorization", "Bearer "+ authorization.access_token);
+                    PayPalReqBody.Root root = new PayPalReqBody.Root();
+                    root.intent = "CAPTURE";
+                    
+                    request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+
+                    var Orderresponse = await httpClient.SendAsync(request);
+                }
+            }
             return new PayPalResBBody();
         }
 
