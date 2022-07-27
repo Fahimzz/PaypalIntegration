@@ -7,7 +7,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using static Paypal.Models.AccessTokenFormate;
 
 namespace Paypal.Controllers
 {
@@ -71,11 +74,12 @@ namespace Paypal.Controllers
             var response = task.Result;
             //response.EnsureSuccessStatusCode();
             string responseBody = response.Content.ReadAsStringAsync().Result;
+            Root deptObj = JsonSerializer.Deserialize<Root>(responseBody);
             Console.WriteLine(responseBody);
             return new PayPalResBBody();
         }
+
+
         
-
-
     }
 }
